@@ -5,11 +5,6 @@ import numpy as np
 def generate_galaxies(num_bodies, dimension, num_galaxies):
     data = []
 
-    # U-Quadratic distribution fucntion https://en.wikipedia.org/wiki/U-quadratic_distribution accessed on 17 April 2024
-    a = -(num_bodies)**2
-    b = num_bodies**2
-    pdf = lambda x: (12 / (b - a)**3) * (x - (b + a) / 2)**2
-
     galaxy_centres = []
     while len(galaxy_centres) < num_galaxies:
         centre = []
@@ -19,11 +14,9 @@ def generate_galaxies(num_bodies, dimension, num_galaxies):
         if all(np.linalg.norm(np.array(centre) - np.array(prev_centre)) >= num_bodies * 10 / num_galaxies for prev_centre in galaxy_centres):
             galaxy_centres.append(centre)
 
-
-    print(galaxy_centres)
     for _ in range(num_bodies):
         particle = [
-            abs(np.random.normal(50, 100)), # Mass
+            abs(np.random.normal(50, 50)), # Mass
         ]
 
         galaxy_i = 0 if num_galaxies == 1 else np.random.randint(0, num_galaxies)
@@ -42,7 +35,7 @@ def generate_uniform(num_bodies, dimension):
     data = []
     for _ in range(num_bodies):
         particle = [
-            abs(np.random.normal(50, 100)), # Mass
+            abs(np.random.normal(50, 50)), # Mass
         ]
 
         for _ in range(dimension): # position
@@ -60,16 +53,18 @@ def main():
         print(f'Incorrect arguments provided', file=sys.stderr)
         return
 
-    style = int(sys.argv[1])
-    num_bodies = int(sys.argv[2])
-    dimension = int(sys.argv[3])
-    output_file = str(sys.argv[4])
+    num_bodies = int(sys.argv[1])
+    dimension = int(sys.argv[2])
+    num_galaxies = int(sys.argv[3])
+    output_dir = str(sys.argv[4])
 
+    output_file = output_dir + f"/n{num_bodies}_d{dimension}_g{num_galaxies}.csv"
+    print(output_file)
     with open(output_file, "w+") as of:
         csv_writer = csv.writer(of)
 
-        if style > 0:
-            data = generate_galaxies(num_bodies, dimension, style)
+        if num_galaxies > 0:
+            data = generate_galaxies(num_bodies, dimension, num_galaxies)
         else:
             data = generate_uniform(num_bodies, dimension)
 
