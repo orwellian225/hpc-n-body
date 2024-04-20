@@ -51,7 +51,9 @@ int main(int argc, char **argv) {
     fmt::println("\tInput: {}", input_filepath);
     fmt::println("\tInput: {}", output_filepath);
 
-    if (hpc_mode == "MPI") {
+    if (hpc_mode == "SERIAL") {
+
+    } else if (hpc_mode == "MPI") {
         return mpi_main();
     } else if (hpc_mode == "CUDA") {
         return cuda_main();

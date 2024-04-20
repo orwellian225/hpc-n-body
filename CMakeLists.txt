@@ -7,7 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_subdirectory(lib/fmt)
 
 add_executable(nbody
-    src/main.cpp src/cuda_main.cpp src/mpi_main.cpp
+    src/main.cpp src/cuda_main.cpp src/mpi_main.cpp src/serial_main.cpp
 )
 
 target_include_directories(nbody PUBLIC include PUBLIC lib/fmt/include)
