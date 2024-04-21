@@ -42,3 +42,15 @@ Each time class will be repeated at least 3 times for an average, each with a un
 * Particle Configuration Representation
 * Number of bodies vs Execution time
     * Organized by class of timesteps
+
+## Generating Data
+
+### Generate Data
+```bash
+python scripts/generate_configuration.py <num_bodies> <num_dimensions> <num_galaxies> <output_directory>
+```
+
+### Generate Data and Graph
+```bash
+scripts/gen_data.sh <num_bodies> <num_dimensions> <num_galaxies>
+```

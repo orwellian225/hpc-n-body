@@ -39,7 +39,7 @@ def generate_uniform(num_bodies, dimension):
         ]
 
         for _ in range(dimension): # position
-            particle.append(np.random.uniform(-(num_bodies)**2 , (num_bodies)**2 ))
+            particle.append(np.random.uniform(-(num_bodies) * 10 , (num_bodies) * 10 ))
 
         for _ in range(dimension): # velocity
             particle.append(np.random.uniform(0, 100) / particle[0] ) # generate a momentum and then convert to velocity
