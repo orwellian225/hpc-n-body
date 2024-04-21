@@ -8,6 +8,7 @@ add_subdirectory(lib/fmt)
 
 add_executable(nbody
     src/main.cpp src/cuda_main.cpp src/mpi_main.cpp src/serial_main.cpp
+    src/space_configuration.cpp src/barneshut.cpp
 )
 
 target_include_directories(nbody PUBLIC include PUBLIC lib/fmt/include)

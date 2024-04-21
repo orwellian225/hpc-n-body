@@ -8,6 +8,7 @@
 #include "cuda_main.hpp"
 #include "mpi_main.hpp"
 #include "serial_main.hpp"
+#include "space_configuration.hpp"
 
 int main(int argc, char **argv) {
 
@@ -27,7 +28,7 @@ int main(int argc, char **argv) {
      *      6: Output filepath
      */
 
-    if (argc != 6) {
+    if (argc != 7) {
         fmt::println(stderr, "Invalid arguments");
         fmt::println(stderr, "\tHPC Mode");
         fmt::println(stderr, "\tNumber of bodies");
@@ -42,21 +43,23 @@ int main(int argc, char **argv) {
     uint32_t num_bodies = static_cast<uint32_t>(atoi(argv[2]));
     uint32_t num_dimensions = static_cast<uint32_t>(atoi(argv[3]));
     uint32_t num_timesteps = static_cast<uint32_t>(atoi(argv[4]));
-    uint8_t input_mode = static_cast<uint8_t>(atoi(argv[5]));
-    std::string input_filepath(argv[6]);
-    std::string output_filepath(argv[7]);
+    std::string input_filepath(argv[5]);
+    std::string output_filepath(argv[6]);
 
     std::transform(hpc_mode.begin(), hpc_mode.end(), hpc_mode.begin(), [](unsigned char c){ return std::toupper(c); });
 
     fmt::println("Selected Configuration");
     fmt::println("\tHPC Mode: {}", hpc_mode);
     fmt::println("\tNumber of bodies: {}", num_bodies);
+    fmt::println("\tDimension: {}", num_dimensions);
     fmt::println("\tExecuted Timesteps: {}", num_timesteps);
     fmt::println("\tInput: {}", input_filepath);
-    fmt::println("\tInput: {}", output_filepath);
+    fmt::println("\tOutput: {}", output_filepath);
+
+    SpaceConfiguration config = SpaceConfiguration::load(num_bodies, num_dimensions, input_filepath);
 
     if (hpc_mode == "SERIAL") {
-        return serial_main();
+        return serial_main(config, num_timesteps);
     } else if (hpc_mode == "MPI") {
         return mpi_main();
     } else if (hpc_mode == "CUDA") {
