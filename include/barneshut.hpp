@@ -27,6 +27,8 @@ struct TreeNode {
 Particle *convert_to_region(TreeNode* tree_node);
 
 void insert_node(TreeNode *tree_node, Particle *particle);
-void print_tree(TreeNode *tree_node, uint32_t depth);
 
+void print_tree(TreeNode *tree_node, uint32_t depth);
 void save_tree(TreeNode *tree_node, FILE* outfile);
+
+void free_tree(TreeNode *tree_node);

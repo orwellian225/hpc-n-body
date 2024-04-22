@@ -1,15 +1,22 @@
 #include <string>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <fmt/core.h>
 
+#include "fmt/base.h"
 #include "space_configuration.hpp"
 
 SpaceConfiguration SpaceConfiguration::load(uint32_t num_particles, uint8_t particle_dimension, std::string filepath) {
     Particle *particles = new Particle[num_particles];
 
+
     FILE* infile = fopen(filepath.c_str(), "r+");
+    if (infile == NULL) {
+        fmt::println(stderr, "File {} not opened", filepath);
+        exit(EXIT_FAILURE);
+    }
 
     char linebuffer[1024];
     size_t delimiter_pos;
@@ -48,7 +55,6 @@ SpaceConfiguration SpaceConfiguration::load(uint32_t num_particles, uint8_t part
             mass, VectorN { positions, particle_dimension }, VectorN { velocities, particle_dimension }
         };
 
-        // fmt::println("{}", new_particle.to_string());
         particles[particle_i] = new_particle;
     }
 
@@ -105,4 +111,8 @@ VectorN VectorN::create(uint8_t size, float initial_value) {
 
 float& VectorN::operator[](uint8_t idx) {
     return data[idx];
+}
+
+void VectorN::free() {
+    delete[] data;
 }

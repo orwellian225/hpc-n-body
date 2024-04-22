@@ -38,6 +38,8 @@ void insert_node(TreeNode *tree_node, Particle *particle) {
 }
 
 void print_tree(TreeNode *tree_node, uint32_t depth) {
+    if (tree_node == nullptr)
+        return;
 
     std::string node_str = fmt::format("{} | {}:", 
         depth, 
@@ -57,14 +59,14 @@ void print_tree(TreeNode *tree_node, uint32_t depth) {
 
         node_str = fmt::format("{} mass = {}, CoM = ({}), p = ({})", node_str, tree_node->mass, com_str, position_str);
 
-        fmt::println(node_str);
+        fmt::println("{}", node_str);
         for (uint32_t i = 0; i < static_cast<uint32_t>(std::pow(2., tree_node->dimensions)); ++i)
             if (tree_node->children[i] != nullptr)
                 print_tree(tree_node->children[i], depth + 1);
 
     } else if (tree_node->type == Body) {
         node_str = fmt::format("{} {}", node_str, tree_node->node_particle->to_string());
-        fmt::println(node_str);
+        fmt::println("{}", node_str);
     }
 
 }
@@ -87,14 +89,14 @@ void save_tree(TreeNode *tree_node, FILE* outfile) {
 
         node_str = fmt::format("{},{},{},{},{}", node_str, tree_node->mass, com_str, position_str, tree_node->region_width);
 
-        fmt::println(outfile, node_str);
+        fmt::println(outfile, "{}", node_str);
         for (uint32_t i = 0; i < static_cast<uint32_t>(std::pow(2., tree_node->dimensions)); ++i)
             if (tree_node->children[i] != nullptr)
                 save_tree(tree_node->children[i], outfile);
 
     } else if (tree_node->type == Body) {
         node_str = fmt::format("{},{}", node_str, tree_node->node_particle->to_csv_string());
-        fmt::println(outfile, node_str);
+        fmt::println(outfile, "{}", node_str);
     }
 }
 
@@ -138,4 +140,22 @@ Particle *convert_to_region(TreeNode* tree_node) {
     tree_node->mass = 0.;
 
     return previous_particle;
+}
+
+void free_tree(TreeNode *tree_node) {
+    if (tree_node == nullptr) 
+        return;
+
+    tree_node->type = Empty;
+    tree_node->region_centre.free();
+    tree_node->centre_of_mass.free();
+
+    if (tree_node->type == Region) {
+        for (uint32_t i = 0; i < static_cast<uint32_t>(std::pow(2., tree_node->dimensions)); ++i)
+            free_tree(tree_node->children[i]);
+
+        delete[] tree_node->children;
+    }
+
+    return;
 }
