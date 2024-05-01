@@ -52,7 +52,9 @@ SpaceConfiguration SpaceConfiguration::load(uint32_t num_particles, uint8_t part
         }
 
         Particle new_particle = {
-            mass, VectorN { positions, particle_dimension }, VectorN { velocities, particle_dimension }
+            mass, 
+            VectorN { positions, particle_dimension }, 
+            VectorN { velocities, particle_dimension },
         };
 
         particles[particle_i] = new_particle;
@@ -67,6 +69,33 @@ SpaceConfiguration SpaceConfiguration::load(uint32_t num_particles, uint8_t part
     };
 
     return config;
+}
+
+void SpaceConfiguration::save(std::string filepath) {
+    FILE *outfile = fopen(filepath.c_str(), "w+");
+    if (outfile == NULL) {
+        fmt::println(stderr, "File {} not opened", filepath);
+        exit(EXIT_FAILURE);
+    }
+    
+    for (uint32_t i = 0; i < num_particles; ++i) {
+        fmt::println(outfile, "{}", particles[i].to_csv_string());
+    }
+
+    fclose(outfile);
+}
+
+void SpaceConfiguration::free() {
+    for (uint32_t i = 0; i < num_particles; ++i) {
+        particles[i].free();
+    }
+
+    delete[] particles;
+}
+
+void Particle::free() {
+    position.free();
+    velocity.free();
 }
 
 std::string Particle::to_string() {
@@ -99,12 +128,12 @@ std::string Particle::to_csv_string() {
     );
 }
 
-VectorN VectorN::create(uint8_t size, float initial_value) {
-    VectorN new_vector;
-    new_vector.size = size;
-    new_vector.data = new float[size];
+VectorN* VectorN::create(uint8_t size, float initial_value) {
+    VectorN *new_vector = new VectorN;
+    new_vector->size = size;
+    new_vector->data = new float[size];
     for (uint8_t i = 0; i < size; ++i)
-        new_vector.data[i] = initial_value;
+        new_vector->data[i] = initial_value;
 
     return new_vector;
 }

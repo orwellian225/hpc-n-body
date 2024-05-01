@@ -58,13 +58,18 @@ int main(int argc, char **argv) {
 
     SpaceConfiguration config = SpaceConfiguration::load(num_bodies, num_dimensions, input_filepath);
 
+    int result;
     if (hpc_mode == "SERIAL") {
-        return serial_main(config, num_timesteps);
+        result = serial_main(config, num_timesteps, output_filepath);
     } else if (hpc_mode == "MPI") {
-        return mpi_main();
+        result = mpi_main();
     } else if (hpc_mode == "CUDA") {
-        return cuda_main();
+        result = cuda_main();
     } else {
         fmt::println(stderr, "Invalid HPC Mode selected. Please choose:\n\tCUDA\n\tMPI\n\tSERIAL");
+        result = -1;
     }
+
+    config.free();
+    return result;
 }

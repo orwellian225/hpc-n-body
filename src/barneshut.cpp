@@ -12,16 +12,16 @@ void insert_node(TreeNode *tree_node, Particle *particle) {
         // 2D: child_idx = (x >= xp) * 1 + (y >= yp) * 2
         // 3D: child_idx = (x >= xp) * 1 + (y >= yp) * 2 + (z >= zp) * 4
         for (uint8_t i = 0; i < tree_node->dimensions; ++i)
-            child_idx += (tree_node->region_centre[i] <= particle->position[i]) * pow(2, i);
+            child_idx += ((*tree_node->region_centre)[i] <= particle->position[i]) * pow(2, i);
 
         for (uint8_t i = 0; i < tree_node->dimensions; ++i) {
-            tree_node->centre_of_mass[i] *= tree_node->mass;
-            tree_node->centre_of_mass[i] += particle->position[i] * particle->mass;
+            (*tree_node->centre_of_mass)[i] *= tree_node->mass;
+            (*tree_node->centre_of_mass)[i] += particle->position[i] * particle->mass;
         }
 
         tree_node->mass += particle->mass;
         for (uint8_t i = 0; i < tree_node->dimensions; ++i)
-            tree_node->centre_of_mass[i] /= tree_node->mass;
+            (*tree_node->centre_of_mass)[i] /= tree_node->mass;
 
         insert_node(tree_node->children[child_idx], particle);
 
@@ -37,6 +37,57 @@ void insert_node(TreeNode *tree_node, Particle *particle) {
     }
 }
 
+void calculate_force(TreeNode *tree_node, Particle *particle, VectorN& force, float distance_threshold) {
+    if (tree_node->type == Body) {
+        if (tree_node->node_particle == particle)
+            return;
+
+        VectorN *direction = VectorN::create(tree_node->dimensions, 0.);
+        for (uint8_t d = 0; d < tree_node->dimensions; ++d)
+            (*direction)[d] = tree_node->node_particle->position[d] - particle->position[d];
+
+        float norm = 0.;
+        for (uint8_t d = 0; d < tree_node->dimensions; ++d)
+            norm += (*direction)[d] * (*direction)[d];
+        norm = std::sqrt(norm);
+
+        float force_mag = 6.67408 * std::pow(10, -11) * particle->mass * tree_node->node_particle->mass / (norm * norm);
+        for (uint8_t d = 0; d < tree_node->dimensions; ++d)
+            force[d] += force_mag * (*direction)[d] / norm;
+
+        direction->free();
+        delete direction;
+
+    } else if (tree_node->type == Region) {
+
+        VectorN *direction = VectorN::create(tree_node->dimensions, 0.);
+        for (uint8_t d = 0; d < tree_node->dimensions; ++d)
+            (*direction)[d] = (*tree_node->centre_of_mass)[d] - particle->position[d];
+        
+        float norm = 0.;
+        for (uint8_t d = 0; d < tree_node->dimensions; ++d)
+            norm += (*direction)[d] * (*direction)[d];
+        norm = std::sqrt(norm);
+
+
+        if (tree_node->region_width / norm > distance_threshold) {
+            direction->free();
+            delete direction;
+            for (uint32_t i = 0; i < static_cast<uint32_t>(std::pow(2., tree_node->dimensions)); ++i)
+                calculate_force(tree_node->children[i], particle, force, distance_threshold);
+        } else {
+            float force_mag = 6.67408 * std::pow(10, -11) * particle->mass * tree_node->mass / (norm * norm);
+            for (uint8_t d = 0; d < tree_node->dimensions; ++d)
+                force[d] += force_mag * (*direction)[d] / norm;
+
+            direction->free();
+            delete direction;
+        }
+    }
+
+    return;
+}
+
 void print_tree(TreeNode *tree_node, uint32_t depth) {
     if (tree_node == nullptr)
         return;
@@ -47,14 +98,14 @@ void print_tree(TreeNode *tree_node, uint32_t depth) {
     );
 
     if (tree_node->type == Region) {
-        std::string position_str = fmt::format("{}", tree_node->region_centre[0]);
+        std::string position_str = fmt::format("{}", (*tree_node->region_centre)[0]);
         for (uint8_t i = 1; i < tree_node->dimensions; ++i) {
-            position_str = fmt::format("{}, {}", position_str, tree_node->region_centre[i]);
+            position_str = fmt::format("{}, {}", position_str, (*tree_node->region_centre)[i]);
         }
 
-        std::string com_str = fmt::format("{}", tree_node->centre_of_mass[0]);
+        std::string com_str = fmt::format("{}", (*tree_node->centre_of_mass)[0]);
         for (uint8_t i = 1; i < tree_node->dimensions; ++i) {
-            com_str = fmt::format("{}, {}", com_str, tree_node->centre_of_mass[i]);
+            com_str = fmt::format("{}, {}", com_str, (*tree_node->centre_of_mass)[i]);
         }
 
         node_str = fmt::format("{} mass = {}, CoM = ({}), p = ({})", node_str, tree_node->mass, com_str, position_str);
@@ -77,14 +128,14 @@ void save_tree(TreeNode *tree_node, FILE* outfile) {
     );
 
     if (tree_node->type == Region) {
-        std::string position_str = fmt::format("{}", tree_node->region_centre[0]);
+        std::string position_str = fmt::format("{}", (*tree_node->region_centre)[0]);
         for (uint8_t i = 1; i < tree_node->dimensions; ++i) {
-            position_str = fmt::format("{},{}", position_str, tree_node->region_centre[i]);
+            position_str = fmt::format("{},{}", position_str, (*tree_node->region_centre)[i]);
         }
 
-        std::string com_str = fmt::format("{}", tree_node->centre_of_mass[0]);
+        std::string com_str = fmt::format("{}", (*tree_node->centre_of_mass)[0]);
         for (uint8_t i = 1; i < tree_node->dimensions; ++i) {
-            com_str = fmt::format("{},{}", com_str, tree_node->centre_of_mass[i]);
+            com_str = fmt::format("{},{}", com_str, (*tree_node->centre_of_mass)[i]);
         }
 
         node_str = fmt::format("{},{},{},{},{}", node_str, tree_node->mass, com_str, position_str, tree_node->region_width);
@@ -133,7 +184,7 @@ Particle *convert_to_region(TreeNode* tree_node) {
         // 3 = 11 | 0 | 1
         // 3 = 11 | 1 | 1
         for (uint8_t j = 0; j < tree_node->dimensions; ++j)
-            tree_node->children[i]->region_centre[j] = tree_node->region_centre[j] + (((i >> j) & 1) == 1 ? 1 : -1) * tree_node->children[i]->region_width;
+            (*tree_node->children[i]->region_centre)[j] = (*tree_node->region_centre)[j] + (((i >> j) & 1) == 1 ? 1 : -1) * tree_node->children[i]->region_width;
     }
 
     tree_node->centre_of_mass = VectorN::create(tree_node->dimensions, 0.);
@@ -143,19 +194,24 @@ Particle *convert_to_region(TreeNode* tree_node) {
 }
 
 void free_tree(TreeNode *tree_node) {
-    if (tree_node == nullptr) 
+    if (tree_node == nullptr)
         return;
 
-    tree_node->type = Empty;
-    tree_node->region_centre.free();
-    tree_node->centre_of_mass.free();
+    tree_node->region_centre->free();
+    delete tree_node->region_centre;
 
     if (tree_node->type == Region) {
-        for (uint32_t i = 0; i < static_cast<uint32_t>(std::pow(2., tree_node->dimensions)); ++i)
+        tree_node->centre_of_mass->free();
+        delete tree_node->centre_of_mass;
+
+        for (uint32_t i = 0; i < static_cast<uint32_t>(std::pow(2., tree_node->dimensions)); ++i) {
             free_tree(tree_node->children[i]);
+            delete tree_node->children[i];
+        }
 
         delete[] tree_node->children;
     }
 
+    tree_node->type = Empty;
     return;
 }

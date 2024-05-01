@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <string>
 #include <stdint.h>
 
@@ -8,8 +9,9 @@ struct VectorN {
     uint8_t size;
 
     float& operator[](uint8_t idx);
+    
 
-    static VectorN create(uint8_t size, float initial_value);
+    static VectorN* create(uint8_t size, float initial_value);
     void free();
 };
 
@@ -17,8 +19,10 @@ struct Particle {
     float mass;
     VectorN position;
     VectorN velocity;
+
     std::string to_string();
     std::string to_csv_string();
+    void free();
 };
 
 struct SpaceConfiguration {
